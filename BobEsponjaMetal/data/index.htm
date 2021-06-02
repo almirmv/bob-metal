@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bob Metal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    <link rel="stylesheet" href="mycss.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+  </head>
+  <body onload="create_grids()">
+  
+  <!--NAVBAR-->
+  <nav class="navbar is-tab" role="navigation" aria-label="main navigation">
+    <!--NAV-BRAND-->
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://omecatronico.com.br">
+        <img src="https://omecatronico.com.br/blog/wp-content/uploads/2020/01/logo_recortado.png" alt="Sistema de controle de servos e movimentos" width="112" height="28">
+        <div class="navbar-item">75%<i class='fas fa-battery-three-quarters fa-rotate-270' aria-hidden='true'></i></div>
+      </a>
+      <!--NAV-BURGUER-->
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+    <!--NAV-MENU-->
+    <div id="navmenu" class="navbar-menu">
+      <div class="navbar-start">
+          <a class="navbar-item is-tab is-active" href="/index.htm">Control</a>
+          <a class="navbar-item" href="/audio/index.htm">Audio</a>
+          <a class="navbar-item" href="/motion/index.htm">Motion</a>
+          <a class="navbar-item" href="/config/index.htm">Config</a>
+          <a class="navbar-item" href="/edit">Editor</a>
+          
+      </div>
+      
+   </div>
+  </nav> 
+  
+<!--Colunas-->
+<div class="columns">
+
+  <div class="column is-2">        
+  </div>
+  
+  <div class="column is-4">
+    <p>Movimentos <button class="button is-small is-danger is-outlined" onclick="exec_file('/motion/STOP/')">Stop</button></p>
+    <div id="motionDiv" class="grid-container">
+      <div class="grid-item">1</div>
+      <div class="grid-item">2</div>
+      <div class="grid-item">3</div>  
+      <div class="grid-item">4</div>
+      <div class="grid-item">5</div>
+      <div class="grid-item">6</div>  
+      <div class="grid-item">7</div>
+      <div class="grid-item">8</div>
+      <div class="grid-item">9</div>  
+    </div>        
+  </div>
+  
+  <div class="column is-4">
+    <p>Audios <button class="button is-small is-danger is-outlined" onclick="exec_file('/audio/STOP/')">Stop</button></p>
+    <div id="audioDiv" class="grid-container">
+      <div class="grid-item">1</div>
+      <div class="grid-item">2</div>
+      <div class="grid-item">3</div>  
+      <div class="grid-item">4</div>
+      <div class="grid-item">5</div>
+      <div class="grid-item">6</div>  
+      <div class="grid-item">7</div>
+      <div class="grid-item">8</div>
+      <div class="grid-item">9</div>  
+    </div>
+  </div>
+  
+  <div class="column is-2">        
+  </div>
+
+</div>
+
+
+
+<script>
+    //Adiciona event listeners no burger e no menu e ao clicar vai inserir ou retirar a classe "is-active"  
+    var burger = document.querySelector('.navbar-burger'); //Get the first element in the document with class="navbar-burger"
+    var menu = document.querySelector('.navbar-menu');
+    burger.addEventListener('click', function() {
+      burger.classList.toggle('is-active');
+      menu.classList.toggle('is-active');
+    });
+  
+    //vamos criar as grids======================================================
+    var jsontxt="";
+    function create_grids(){
+      create_grid_from_SD("/motion", "json", "motionDiv");  //get json obj com lista de arquivos
+      create_grid_from_SD("/audio", "mp3", "audioDiv");    //get json obj com lista de arquivos
+      //listSD("/motion", "motionDiv");  //get json obj com lista de arquivos
+      //console.log("Json Texto: " + jsontxt);
+   }
+
+  // funcao ajax para listar arquivos do SD card==================================
+  function create_grid_from_SD(path, file_type, div_id) {
+    var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          var jsonObj = JSON.parse(this.responseText);   //transforma json txt em json obj
+          var temp_html="";
+          for (x in jsonObj){
+            //se for do formato esqpecificado adiciona na lista...
+            var valid_file = jsonObj[x].name.search(file_type);
+            //console.log(valid_file);
+            if(valid_file > 0){
+              var nome = jsonObj[x].name.replace(path+"/","");
+              nome = nome.replace(".mp3","");
+              nome = nome.replace(".json","");
+              temp_html += "<div class='grid-item' onclick=exec_file(\""+ jsonObj[x].name +"\")>" + nome + "</div>"; //Cria celula do grid
+              
+            }        
+          }
+          document.getElementById(div_id).innerHTML = temp_html;  //insere todas as celulas na grid selecionada
+        }
+      };
+    xhttp.open("GET", "/list?dir=" + path, true);
+    xhttp.send();
+  } 
+  //Executar clique da grid======================================================
+  function exec_file(path){
+    var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          console.log("exec ok: "+ path + "response: "+ this.responseText);
+        }
+      };
+    xhttp.open("GET", "/exec?file=" + path, true);
+    xhttp.send();
+   }
+  </script>
+    
+  </body>
+</html>

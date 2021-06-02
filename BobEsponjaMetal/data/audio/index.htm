@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bob Metal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+  </head>
+  <body>
+  
+  <!--NAVBAR-->
+  <nav class="navbar is-tab" role="navigation" aria-label="main navigation">
+    <!--NAV-BRAND-->
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://omecatronico.com.br">
+        <img src="https://omecatronico.com.br/blog/wp-content/uploads/2020/01/logo_recortado.png" alt="Sistema de controle de servos e movimentos" width="112" height="28">
+      </a>
+      <!--NAV-BURGUER-->
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+    <!--NAV-MENU-->
+    <div id="navmenu" class="navbar-menu">
+      <div class="navbar-start">
+          <a class="navbar-item" href="/index.htm">Control</a>
+          <a class="navbar-item is-tab is-active" href="#">Audio</a>
+          <a class="navbar-item" href="/motion/index.htm">Motion</a>
+          <a class="navbar-item" href="/config/index.htm">Config</a>
+          <a class="navbar-item" href="/edit">Editor</a>
+      </div>
+      
+   </div>
+  </nav> 
+  
+<!--Colunas-->
+<div class="columns is-centered">
+
+     <div class="column is-4">        
+     </div>
+
+    <div class="column">
+        
+        <nav class="panel is-info">
+            <p class="panel-heading">Dir: /Audio/</p>
+          <div class="panel-block">
+            <!--Div para envio de arquivo de audio-->
+            <div id="fileDIV" class="file has-name is-info is-fullwidth">
+              <label class="file-label">
+                <input class="file-input" type="file" >
+                <span class="file-cta">
+                  <span class="file-icon"><i class="fas fa-upload"></i></span>
+                  <span class="file-label">File</span>
+                </span>
+                <span class="file-name">somente .mp3</span>
+              </label>
+              <button class="button is-link is-outlined" onclick="sendAudioToSD()">Enviar</button>
+              <div id="statusFileDIV"></div>
+            </div>
+          </div>
+            <!--DIV para lista dos arquivos do SD-->
+            <div id="arquivos">
+              <a class='panel-block'>Nada ainda ...</a>
+            </div>
+            <!--DIV para botao de listar SD-->
+            <div class="panel-block">
+              <button class="button is-link is-outlined is-fullwidth" onclick="listSD('/audio','.mp3')">Atualizar listagem</button>
+            </div>
+          </nav>
+    </div>
+    <div class="column is-4">        
+    </div>
+
+    
+</div>
+
+
+
+<script>
+    //Adiciona event listeners no burger e no menu e ao clicar vai inserir ou retirar a classe "is-active"  
+    var burger = document.querySelector('.navbar-burger');
+    var menu = document.querySelector('.navbar-menu');
+    burger.addEventListener('click', function() {
+      burger.classList.toggle('is-active');
+      menu.classList.toggle('is-active');
+    });
+   
+    //detectar variaçoes no campo de entrada...
+    const fileInput = document.querySelector('#fileDIV input[type=file]');
+    fileInput.onchange = () => {
+      if(fileInput.files.length > 0) {
+        const fileName = document.querySelector('#fileDIV .file-name');
+        fileName.textContent = fileInput.files[0].name.replace(/ /g,"-");
+        //fileName.textContent = fileName.textContent.replace(/ /g,"-");
+        //testar se é um mp3 o anexo
+        if(fileName.textContent.search(".mp3") < 1){
+          document.getElementById("arquivos").innerHTML = "<p class='help is-danger'>Somente arquivos .mp3 são suportados!</p>";
+        
+        }
+      }
+    }   
+    //SEND AUDIO TO SD=======================================================
+    function sendAudioToSD(){
+      if(fileInput.files.length === 0){                 //nehum arquivo anexado..
+         return;
+      }
+      if(fileInput.files[0].name.search(".mp3") < 1){   //nao é mp3...
+        document.getElementById("arquivos").innerHTML = "<p class='help is-danger'>Somente arquivos .mp3 são suportados!</p>";
+        return;
+      }
+
+      var pathSD = "/audio/" + fileInput.files[0].name.replace(/ /g,"-"); //cria o path completo "/audio/nomearquivo.mp3" e substitui todos os espaços por hifens
+      //criando uma conexão para envio
+      xmlHttp = new XMLHttpRequest();
+      xmlHttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+         document.getElementById("arquivos").innerHTML = "<p class='help is-success'>Enviado com sucesso!</p>";
+        }
+      };
+      var formData = new FormData();
+      formData.append("data", fileInput.files[0], pathSD);
+      xmlHttp.open("POST", "/edit");
+      
+      //criando barra de progresso...
+      xmlHttp.upload.onprogress = function(e) {
+        var percentComplete = Math.ceil((e.loaded / e.total) * 100);
+        document.getElementById("arquivos").innerHTML = "<progress class='progress is-small' value='" + percentComplete +"' max='100'>"+ percentComplete + "%</progress>";
+      };
+      //disparando o envio...
+      xmlHttp.send(formData);
+    }
+    
+    
+      
+      // funcao ajax para listar arquivos do SD card==================================
+      function listSD(dir, tipoArquivo) {
+        document.getElementById("arquivos").innerHTML = "<a class='panel-block'>Nada ainda ...</a>";
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            var myObj = JSON.parse(this.responseText);  //decodifica o json de retorno
+            //varrer o objeto pegando todos os campos
+            var html_temp="";
+            for (x in myObj) {
+                //procura .mp3 no nome do arquivo. search retorna -1 quando nao acha
+                if(myObj[x].name.search(tipoArquivo) > 1){
+                  html_temp+="<div class='panel-block'>";
+                  html_temp+="<button class='button is-link is-outlined is-small' onclick='deleteFromSD(\""+myObj[x].name+"\")'>Delete</button>";
+                  html_temp+="<span class='panel-icon'><i class='fas fa-file-audio' aria-hidden='true'></i></span>";
+                  html_temp+=myObj[x].name.replace(dir+"/","");
+                  html_temp+="</div>";
+                }
+                    
+              
+            }
+            document.getElementById("arquivos").innerHTML = html_temp;  //joga todo o html gerado na coluna
+          }
+        };
+        xhttp.open("GET", "/list?dir=" + dir, true);
+        xhttp.send();
+    }
+    
+
+    //Deletar audio do SD card==================================================================
+    function deleteFromSD(nome_arquivo){
+        if(confirm("Apagar " + nome_arquivo +"?")){
+            xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                listSD();   //Delete ok! Relist SD
+            }
+            };
+            var formData = new FormData();
+            formData.append("path", nome_arquivo);
+            xmlHttp.open("DELETE", "/edit");
+            xmlHttp.send(formData);
+        
+        }
+    }
+
+
+      
+
+
+  </script>
+    
+  </body>
+</html>

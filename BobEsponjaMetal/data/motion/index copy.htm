@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bob Metal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    <link rel="stylesheet" href="mycss.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+  </head>
+  <body>
+  
+  <!--NAVBAR-->
+  <nav class="navbar is-tab" role="navigation" aria-label="main navigation">
+    <!--NAV-BRAND-->
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://omecatronico.com.br">
+        <img src="https://omecatronico.com.br/blog/wp-content/uploads/2020/01/logo_recortado.png" alt="Sistema de controle de servos e movimentos" width="112" height="28">
+       
+      </a>
+      <!--NAV-BURGUER-->
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+    <!--NAV-MENU-->
+    <div id="navmenu" class="navbar-menu">
+      <div class="navbar-start">
+          <a class="navbar-item" href="/index.htm">Control</a>
+          <a class="navbar-item" href="/audio/index.htm">Audio</a>
+          <a class="navbar-item is-tab is-active" href="#">Motion</a>
+          <a class="navbar-item" href="/config/index.htm">Config</a>
+          <a class="navbar-item" href="/edit">Editor</a>
+      </div>
+      
+   </div>
+  </nav> 
+  <br>
+<!--Colunas-->
+<div class="columns is-centered">
+    <div id="mov" class="column is-2">
+        <!--coluna movimentos completos--> 
+        <nav class="panel is-info">
+            <p class="panel-heading">Dir: /Motion/</p>
+            
+            <div class="panel-block">
+              <input id="newMotionName" class="input is-small is-info" type="text" placeholder="nome movimento">
+              <button class="button is-small is-info is-outlined" onclick="newMotion()">Criar</button>
+            </div>
+                     
+            <!--Lista dos arquivos do SD-->
+            <div id="arquivos">
+              <a class='panel-block'>Nada ainda ...</a>
+            </div>
+            
+            <div class="panel-block">
+              <button class="button is-link is-outlined is-fullwidth" onclick="listSD('/motion', '.json')">Atualizar listagem</button>
+            </div>
+          </nav>
+    </div>
+    
+    <div class="column is-2">
+      <nav class="panel is-info">
+        <p class="panel-heading">Controles</p>
+        <!--dropdown para escolha do MP3-->
+        <div class="field has-addons">
+          <p class="control has-icons-left is-expanded">
+            <span class="select is-fullwidth">
+              <select>
+                <option selected>N vai n</option>
+                <option>grilo</option>
+                <option>STOP</option>
+              </select>
+            </span>
+            <span class="icon is-small is-left"><i class="fas fa-file-audio"></i></span>
+          </p>
+        </div>
+
+        <!--div para os ranges do tempo e servos-->
+        <div id="rangecolum">
+          <!--coluna servos gerada via javascript-->
+        </div>
+      </nav>
+
+        
+    </div>
+    <div class="column">
+      <nav class="panel is-info">
+      <p id="motionNameMenuId" class="panel-heading">Arquivo: ...</p>
+      
+      <div class="field has-addons">
+        <!--dropdown-->
+      
+        <!--botoes-->
+        <button class="button is-small is-success is-outlined" onclick="adicionaLinha('tbl')">Adicionar Linha</button>
+        <a class="button is-danger is-small is-outlined" onclick="removeLinha('tbl')">
+          <span class="icon is-small"><i class="fa fa-times"></i></span>
+          <span>Remover Linha</span>
+        </a>
+        <a class="button is-info is-small is-outlined" onclick="salvarTabelaSD('tbl')">
+          <span class="icon is-small"><i class="fas fa-sd-card"></i></span>
+          <span>Salvar</span>
+        </a>
+      </div>
+      
+      
+      
+      <table id="tbl" class="table is-narrow">
+        <thead>
+          <tr id="theaderMotions"> 
+            <th><abbr title="Tempo em ms">Tempo</abbr></th>
+            <!--thead add dinamicamente-->          
+            
+          </tr>
+        </thead>
+        <tbody>
+        <!--colunas criadas dinamicamente-->         
+        </tbody>
+      </table>
+      </nav>
+    </div>
+    
+</div>
+
+
+
+<script>
+    //Adiciona event listeners no burger e no menu e ao clicar vai inserir ou retirar a classe "is-active"  
+    var burger = document.querySelector('.navbar-burger');
+    var menu = document.querySelector('.navbar-menu');
+    burger.addEventListener('click', function() {
+      burger.classList.toggle('is-active');
+      menu.classList.toggle('is-active');
+    });
+
+    var JSON_obj_SD;
+    var motion_path="";
+    var total_servos = 16;
+    var i;
+    var total_linhas=1;
+    var linha_atual=0;
+    var tempo = 1000;
+    var array_linha= [total_servos+1];
+    var array_movimento = [];
+    array_movimento[0]=array_linha;
+
+
+    //document.getElementById("tbl").addEventListener('click', function (){alert(this.innerHTML);});
+
+    //criar todos os botoes e range slides=================================================================
+    for(i=0;i<total_servos+1;i++){
+        var html_temp = "<div class='field has-addons'><div class='field-label is-small'><label class='label'>";
+        var html_table_header="";     //para ajudar a criar a "theader" da tabela motions
+        if(i==0){
+            html_temp+="Tempo</label></div>";
+        }else{
+            html_temp+="Servo"+i+"</label></div>";
+            html_table_header += "<th><abbr title=\"Servo" + i + "\">"+ i + "</abbr></th>"; //criando a "thead" da tabela motions
+        }
+        
+        html_temp += "<p class='control'><button id='btmenos"+i+"' class='button is-info is-small' onclick='btmenosfunc("+i+")'>-</button></p>";
+        //html_temp += "<p class='control'><input id='txt"+i+"' class='input is-small' type='text' placeholder='1500'></p>";
+        html_temp += "<p class='control'><button id='btmais"+i+"' class='button is-info is-small' onclick='btmaisfunc("+i+")'>+</button></p>";
+         if(i==0){
+             html_temp += "<div class='slidecontainer'><input type='range' min='100' max='10000' value='1000' class='slider' id='range"+i+"' oninput='atualizaArray()'></div></div>";
+        }else{
+            html_temp += "<div class='slidecontainer'><input type='range' min='0' max='180' value='90' class='slider' id='range"+i+"' oninput='atualizaArray()'></div></div>";
+            
+        }
+        ;//pega div da coluna dos ranges...
+        document.getElementById("rangecolum").innerHTML += html_temp;               //adiciona nova linha nos Ranges 
+        document.getElementById("theaderMotions").innerHTML += html_table_header;   //adiciona nova coluna no "thead" de motions
+    
+    }
+
+    adicionaLinha("tbl");//iniciar com uma linha preenchida...
+    
+    //click no botao de nova animaçao==========================================================================
+    function newMotion(){
+      var name = document.getElementById("newMotionName").value;
+      //tem algo no campo nome ?
+      if(name.length === 0){                 
+        document.getElementById("arquivos").innerHTML = "<p class='help is-danger'>Digite um nome válido!</p>"; 
+        return;
+      }
+      //criar path, tirar espaços e acrescentar o ".json"...
+      var pathSD = "/motion/" + name.replace(/ /g,"-") + ".json"; //cria o path completo "/motion/nomearquivo.json" e substitui todos os espaços por hifens
+      var objJSON = {
+        "motionName":"andar",
+        "roboName":"BOB Metal",
+        "animation": [
+          {"t":1000,"a":"N-vai-nao.mp3","s":[90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90]}
+          ]
+      }
+      var txt_json = JSON.stringify(objJSON);
+      upload_json(txt_json, pathSD);
+    }
+
+
+    //Atualiza Array=========================================================================================
+    function atualizaArray(){
+        var i;
+        var cell;
+        var linha = document.getElementById("tbl").rows[linha_atual].cells;
+        console.log(linha);
+        for (i = 0; i < total_servos+1;i++) {
+            array_linha[i] = document.getElementById("range"+i).value;  //captura cada slider e salva no array da linha atual
+            //document.getElementById("txt"+i).value = array_linha[i];    //puxa do array e atualiza os txt 
+            //cell = linha.getElementsByTagName("td");
+            linha[i].innerHTML = array_linha[i];
+        }
+
+
+    }
+    
+
+    function btmenosfunc(i) {
+        //alert(i);
+        //mudanmos o value do range...
+        document.getElementById("range"+i).value--;
+        atualizaArray();//atualiza todos os arrays com todos os ranges
+   
+    }
+
+    //
+    function btmaisfunc(i) {
+        //alert("bt mais");
+        //mudanmos o value do range...
+        document.getElementById("range"+i).value++;
+        atualizaArray();//atualiza todos os arrays com todos os ranges
+        
+        //array_movimento[linha_atual][i]=array_movimento[linha_atual][i]+1;//atualiza array
+    }
+         
+    function atualizalinha(linhaescolhida) {
+        //primeiro limpar as seleçoes...
+        linha_atual = linhaescolhida;
+        //alert("atualizar linha: "+linhaescolhida);
+        console.log("atualizado para: "+linha_atual); //antes de adicionar a linha nova
+        //lista todos os <tr>
+        var x = document.getElementsByTagName("tr");
+        var i;
+        //limpa classe'is-selected' de todos os tr
+        for (i = 0; i < x.length;i++) {
+            x[i].className = '';
+        }
+        //evitar de aplicar"is-selected na linha 0 menu!
+        if(linha_atual>0){
+            x[linha_atual].className = 'is-selected';//agora aplica 'is-selected' no tr que deve ficar ativo
+        }
+        //agora carrega nos ranges os valores da tabela...
+        var linha = document.getElementById("tbl").rows[linha_atual].cells;
+        for(i=0; i<total_servos+1;i++){
+            document.getElementById("range"+i).value = linha[i].innerHTML;
+
+        }
+        
+        
+
+    }
+    
+    //Adcionar nova linha na tabela==============================================
+    function adicionaLinha(idTabela) {
+        //salvar arraylinha no array movimento
+        //fazer arraylinha apontar para ultima posição que foi criada e salvar todos os ranges
+        //criar nova linha na tabela e jogar os dados do array
+        //apos criar linha, alterar para  
+        
+        var i;
+        var tabela = document.getElementById(idTabela);
+        total_linhas = tabela.rows.length;  //pega total de linhas começa com 1.
+        console.log("total Linhas antes: "+total_linhas); //antes de adicionar a linha nova
+
+        var linha = tabela.insertRow(total_linhas); // Create an empty <tr> element and add it to the last position of the table:
+        total_linhas = tabela.rows.length;          //pega total de linhas começa com 1.
+        linha_atual=total_linhas-1;                 //linha atual começa com 0
+        //linha.addEventListener('click', function(){alert(this.rowIndex)});
+        linha.addEventListener('click', function(){atualizalinha(this.rowIndex)});
+        console.log("total Linhas depois: "+total_linhas); //antes de adicionar a linha nova
+        //criar e preencher as celulas dessa nova linha
+        for(i=0; i < total_servos+1; i++){
+            var celula = linha.insertCell(i);
+            array_linha[i] = document.getElementById("range"+i).value;  //pega valor range joga no array
+            celula.innerHTML = array_linha[i];                          //pega valor do array atualizado e joga na celula 
+        }
+        //agora vamos selecionar a nova linha
+        //limpa classe'is-selected' de todos os tr
+        var x = document.getElementsByTagName("tr");
+        for (i = 0; i < x.length;i++) {
+            x[i].className = '';
+        }
+        linha.className = 'is-selected';  //faz a nova linha ficar selecionada
+        //linha.addEventListener('click', bodymostralinha.bind(null, numeroLinhas));//atrela função bodymostralinha e passa argumento da linha atual
+           
+                
+      }
+
+      // funcao remove uma linha da tabela===========================================
+      function removeLinha(idTabela) {
+        var tabela = document.getElementById(idTabela); //pegamos a tabela 
+        total_linhas = tabela.rows.length;              //o total de linhas... começa com 1.  
+        //verifica se so temos o cabeçalho...
+        if(total_linhas < 2){
+          alert("não há linhas para Remover!");
+          return;//não tem o que deletar. Sai da função.
+        }
+        //tem linha pra deletar...
+        
+          document.getElementById(idTabela).deleteRow(linha_atual);   //apago a linha atual
+          total_linhas--; //diminui uma do total 
+          //checar para onde apontamos a "nova" linha atual
+          if(linha_atual < total_linhas){
+            atualizalinha(linha_atual);
+          }else{
+            atualizalinha(total_linhas-1); 
+          }
+         
+      }     
+      
+
+  // funcao ajax para listar arquivos do SD card==================================
+  function listSD(dir, tipoArquivo) {
+          document.getElementById("arquivos").innerHTML = "<a class='panel-block'>Nada ainda ...</a>";
+          var xhttp = new XMLHttpRequest();
+          xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+              var myObj = JSON.parse(this.responseText);  //decodifica o json de retorno
+              //varrer o objeto pegando todos os campos
+              var html_temp="";
+              for (x in myObj) {
+                  //procura .mp3 no nome do arquivo. search retorna -1 quando nao acha
+                  if(myObj[x].name.search(tipoArquivo) > 1){
+                    html_temp+="<div class='panel-block'>";
+                    html_temp+="<button class='button is-link is-outlined is-small' onclick='deleteFromSD(\""+myObj[x].name+"\")'>Delete</button>";
+                    html_temp+="<span onclick='loadmoveSD(\""+myObj[x].name+"\")'><span class='panel-icon'><i class='fas fa-file-alt' aria-hidden='true'></i></span>";
+                    html_temp+=myObj[x].name.replace(dir+"/","");
+                    html_temp+="</span></div>";
+                  }
+                      
+                
+              }
+              document.getElementById("arquivos").innerHTML = html_temp;  //joga todo o html gerado na coluna
+            }
+          };
+          xhttp.open("GET", "/list?dir=" + dir, true);
+          xhttp.send();
+      }
+
+
+
+//Deletar audio do SD card==================================================================
+function deleteFromSD(nome_arquivo){
+        if(confirm("Apagar " + nome_arquivo +"?")){
+            xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                listSD();   //Delete ok! Relist SD
+            }
+            };
+            var formData = new FormData();
+            formData.append("path", nome_arquivo);
+            xmlHttp.open("DELETE", "/edit");
+            xmlHttp.send(formData);
+        
+        }
+    }
+
+
+      function limparTabela(){
+        //precisamos limpar a tabela...
+        var i=0;
+        var tabela = document.getElementById("tbl");  //captura tabela
+        total_linhas = tabela.rows.length;            //descobre total de linhas. começa em 1... ja o Id começa em 0 !!!
+        for(i=total_linhas; i>1;i--){
+          tabela.deleteRow(i-1);                      //Id começa em 0! apaga da ultima linha ate a 0
+        }
+      }
+      
+      //GERAR TABELA COM OBJETO JSON RECEBIDO========================================================
+      function gerarTabela(path){
+        var tabela = document.getElementById("tbl");  //captura tabela
+        var animation = JSON_obj_SD["animation"];        //pega apenas objetos do "grupo animation"
+        var numlinha=1;    //linha 0 é o cabeçalho da tabela  
+        
+        for (x in animation) {  //linha a linha
+          //nova linha
+          var linha = tabela.insertRow(numlinha); // Create an empty <tr> element and add it to the last position of the table
+          linha.addEventListener('click', function(){atualizalinha(this.rowIndex)});
+          
+          //agora as celulas dessa linha...
+          var celula = linha.insertCell(0);     //nova celula (primeira)
+          celula.innerHTML = animation[x].t;    //pega valor do tempo e joga na primeira celula
+          for(y in animation[x].s){
+            var celula = linha.insertCell(-1);      //nova celula, ja temos a do tempo entao "-1" The value of -1 can also be used; which results in that the new cell will be inserted at the last position.
+            celula.innerHTML = animation[x].s[y];    //pega valor da celula do OBJ e joga na celula da tabela
+          }
+          numlinha++;
+        }
+
+        atualizalinha(1);  //seleciona primeira linha
+        console.log(path);
+        document.getElementById("motionNameMenuId").innerText = "Arquivo: " + path.replace("/motion/","");
+     }
+     
+    function salvarTabelaSD(idTabela){
+      var tabela = document.getElementById(idTabela);     //captura a tabela
+      total_linhas = tabela.rows.length;                  //descobre total de linhas. começa em 1... ja o Id começa em 0 !!!
+      //console.log("Total linhas: " + total_linhas);
+      
+      var newObjJSON = JSON_obj_SD;                       //copia ojeto que foi lido do SD
+      //apagar as animation...
+      newObjJSON.animation = [];                  //apaga array animation completamente
+      //console.log(JSON.stringify(newObjJSON)); 
+      for(var i=1; i < total_linhas; i++){                   //ex lenght = 4 entao tempo de 0 a 3 sendo que 0 é o cabeçalho 
+        //console.log("Linha" + i);                        //linha a linha
+        
+        var temp_array = {"t":0,"a":"","s":[]};           //array temporario
+        
+        //console.log("Numero celulas dessa linha: "+ tabela.rows[i].cells.length);
+        for(var y=0; y < tabela.rows[i].cells.length; y++){                          //celula a celula
+          console.log("linha: "+i+", celula: "+ y + ", Valor: "+ tabela.rows[i].cells[y].innerHTML); 
+          if(y===0){
+            temp_array.t = tabela.rows[i].cells[y].innerHTML;                 //copia conteudo da primeira celula como tempo
+          }else{
+            temp_array.s.push(tabela.rows[i].cells[y].innerHTML);   //copia conteudo celula para array
+          }
+          
+        }
+        temp_array.a = "N-vai-n.mp3";
+        //console.log(JSON.stringify(temp_array));
+        newObjJSON.animation.push(temp_array);          //empurra o array temporario no animation
+
+      }
+      console.log(JSON.stringify(newObjJSON)); 
+      var pathSD = document.getElementById("motionNameMenuId").innerText;   //pega campo "Arquivo: teste.json"
+      pathSD = "/motion/" + pathSD.replace("Arquivo: ","");                 //adiciona motion e retira a parte da palavra arquivos.
+      upload_json(JSON.stringify(newObjJSON), pathSD);
+    }
+
+
+
+
+      // funcao ajax para carregar um arquivo .dat do SD card==================================
+      function loadmoveSD(path) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            JSON_obj_SD = JSON.parse(this.responseText);  //decodifica o json de retorno
+            console.log(JSON.stringify(JSON_obj_SD));
+                 
+            limparTabela();       //limpar tabela antes de por novos dados
+            gerarTabela(path);        //gerar tabela
+            //motion_path = path;   //salva qual é o nome                        
+          }//fim tratamento da resposta
+        };
+        xhttp.open("GET", path, true);
+        xhttp.send();
+      }
+    
+
+
+
+      //ENVIAR JSON EM TXT PARA O PATH DO SD================================================================================= 
+    function upload_json(txtJSON, pathSD){
+      if(txtJSON.length===0){
+        document.getElementById("arquivos").innerHTML = "<p class='help is-danger'>Campo nome vazio!</p>";
+      }
+      if(pathSD.length===0){
+        document.getElementById("arquivos").innerHTML = "<p class='help is-danger'>path vazio!</p>";
+      }
+      //criando requisição PUT
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("arquivos").innerHTML = "<p class='help is-success'>Arquivo criado!</p>";
+          }else{
+            document.getElementById("arquivos").innerHTML = "<p class='help is-danger'>Erro! Não foi criado...</p>";
+          }
+        };
+        var formData = new FormData();
+        formData.append("data", new Blob([txtJSON], { type:"application/json"}), pathSD);
+        
+        xhttp.open("POST", "/edit");
+        xhttp.send(formData);
+
+    }
+
+  </script>
+    
+  </body>
+</html>

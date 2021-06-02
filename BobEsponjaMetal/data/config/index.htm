@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bob Metal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+  </head>
+  <body onload="get_json()">
+  
+  <!--TABS-->
+  <nav class="navbar is-tab" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://omecatronico.com.br">
+        <img src="https://omecatronico.com.br/blog/wp-content/uploads/2020/01/logo_recortado.png" alt="Sistema de controle de servos e movimentos" width="112" height="28">
+      </a>
+  
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+    <!--menu nav bar-->
+    <div id="navbarBasicExample" class="navbar-menu">
+      <div class="navbar-start">
+          <a class="navbar-item" href="/index.htm">Control</a>
+          <a class="navbar-item" href="/audio/index.htm">Audio</a>
+          <a class="navbar-item" href="/motion/index.htm">Motion</a>
+          <a class="navbar-item is-tab is-active" href="#">Config</a>
+          <a class="navbar-item" href="/edit">Editor</a>
+      </div>
+      
+   </div>
+  </nav> 
+  
+<!--Colunas-->
+<div class="columns">
+    <div class="column is-4">        
+    </div>
+    <div class="column">
+        <div class="field">
+            <label class="label">Nome do Robô</label>
+            <div class="control">
+              <input id="nomeRobo"class="input" type="text" placeholder="digite o nome do robô" value="">
+              <span class="icon is-small is-left"><i class="fas fa-snowplow"></i></span>F
+            </div>
+        </div>
+        <div class="field">
+            <label class="label">Criador</label>
+            <div class="control has-icons-left">
+              <input id="nomeCriador" class="input" type="text" placeholder="Text input" value="">
+              <span class="icon is-small is-left"><i class="fas fa-user"></i></span>
+            </div>
+            
+        </div>
+
+        <div class="field">
+            <label class="label">Número de servos:</label>
+            <div class="select" >
+                <select id="numServos" value="4">
+                    <option>0</option>
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                    <option>5</option>
+                    <option>6</option>
+                    <option>7</option>
+                    <option>8</option>
+                    <option>9</option>
+                    <option>10</option>
+                    <option>11</option>
+                    <option>12</option>
+                    <option>13</option>
+                    <option>14</option>
+                    <option>15</option>
+                    <option>16</option>
+                </select>
+            </div>
+        </div>
+        <div class="control">
+            <button class="button is-link" onclick="upload_json();">Salvar no SD</button>
+        </div>
+        <p id="status" class="help is-danger"></p>
+
+
+
+    </div>
+    <div class="column is-4">
+    </div>
+    
+  </div><!--Colunas-->
+
+  
+  <script>
+    //Adiciona event listeners no burger e no menu e ao clicar vai inserir ou retirar a classe "is-active"  
+    var burger = document.querySelector('.navbar-burger');
+    var menu = document.querySelector('.navbar-menu');
+    burger.addEventListener('click', function() {
+      burger.classList.toggle('is-active');
+      menu.classList.toggle('is-active');
+    });
+      
+    function upload_json(){
+      var myJsonObj = {"nomeRobo":"BOB","nomeCriador":"omecatronico.com.br","numServos":0}; //objeto com valores padrao
+      myJsonObj.nomeRobo = document.getElementById("nomeRobo").value;       //substituindo valores...
+      myJsonObj.nomeCriador = document.getElementById("nomeCriador").value;
+      myJsonObj.numServos = document.getElementById("numServos").value;
+      var myJSON = JSON.stringify(myJsonObj);  //obj para texto
+      //criando requisição PUT
+      var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("status").innerHTML ="Configurações Salvas!"
+          }else{
+            document.getElementById("status").innerHTML ="Erro ao tentar salvar!"
+          }
+        };
+        var formData = new FormData();
+        formData.append("data", new Blob([myJSON], { type:"application/json"}),"/config/config.json");
+        
+        xhttp.open("POST", "/edit");
+        xhttp.send(formData);
+
+    }
+
+    function get_json(){
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            var myObj = JSON.parse(this.responseText);  //decodifica o json de retorno
+            //varrer o objeto pegando todos os campos
+            document.getElementById("nomeRobo").value = myObj.nomeRobo;  //joga todo o html gerado na coluna
+            document.getElementById("nomeCriador").value = myObj.nomeCriador;  //joga todo o html gerado na coluna
+            document.getElementById("numServos").value = myObj.numServos;  //joga todo o html gerado na coluna
+            
+            document.getElementById("status").innerHTML =""
+            }else{
+                document.getElementById("status").innerHTML ="Erro ao ler config.json!"
+            }
+        };
+        xhttp.open("GET", "/config/config.json", true);
+        xhttp.send();
+    }
+
+  </script>
+    
+  </body>
+</html>
