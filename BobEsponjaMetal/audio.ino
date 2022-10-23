@@ -19,7 +19,8 @@ void audio_setup(){
     //algum pedido enquanto estamos no play?
     if(audioToPlay.indexOf("/audio/") >= 0){
       decoder->stop();                              //qualquer que seja o pedido da stop no decoder...
-      if(audioToPlay.indexOf("/STOP/") >= 0){
+      DBG_OUTPUT_PORT.print("Audio STOPED!");
+      if(audioToPlay.indexOf("/STOP") >= 0){
         audioToPlay="";                             //se era stop entao zera o pedido.
       }
     }   

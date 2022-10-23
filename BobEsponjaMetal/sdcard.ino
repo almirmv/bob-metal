@@ -1,16 +1,13 @@
 
 void sdcard_setup(){
   DBG_OUTPUT_PORT.print("[INFO]: inicializando SD card...");
+  delay(1000);                                 //Estava dando erro assim que energiza a primeira vez. O delay serve apara estabilizr alimentação antes de tentar iniciar o SDcard.
   if(SD.begin()){
     DBG_OUTPUT_PORT.println("OK");
     hasSD = true;
   }else{
     DBG_OUTPUT_PORT.println("deu ruim!!");
-    while(1);
+    hasSD = false;
+    reiniciar_esp();    //vai reiniciar o ESP32
   }
 }
-
-void exec_motion_SD(String path){
-  DBG_OUTPUT_PORT.println("mov iniciado");
-  
-  }

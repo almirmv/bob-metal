@@ -15,4 +15,17 @@ void serial_msg_ln_erro(){
   DBG_OUTPUT_PORT.println("");       //nova linha
   DBG_OUTPUT_PORT.print("[ERRO] ");  //printa ERRO
   }
+
+//Reinicia o ESP32 apos 4seg enquanto pisca 20 vezes o LED
+void reiniciar_esp(){
+  int i=0;
+  while(i<10){
+    delay(200);      
+    digitalWrite(LED_ESP32_ONBOARD, HIGH);
+    delay(200);
+    digitalWrite(LED_ESP32_ONBOARD, LOW);
+    i++;
+  }
+  ESP.restart();     //reinicia o ESP 
+}
 //-------------------------------------------------------------

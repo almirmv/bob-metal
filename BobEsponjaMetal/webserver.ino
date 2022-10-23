@@ -35,11 +35,11 @@ void handleExec(){
   }
   //arquivo existe?
   if (path != "/" && !SD.exists((char *)path.c_str())) {
-    DBG_OUTPUT_PORT.print("BAD ARGS: falta path");
+    DBG_OUTPUT_PORT.print("BAD ARGS: arquivo nao encontrado");
     return returnFail("BAD PATH");
   }
-  DBG_OUTPUT_PORT.print("Exec: ");DBG_OUTPUT_PORT.println(path);
-  //existe. é motion ou audio?
+  DBG_OUTPUT_PORT.print("Exec: ");DBG_OUTPUT_PORT.println(path);    //pela seria indica o path a ser executado
+  //Arquivo é motion ou audio?
   if(path.indexOf("/motion/") >= 0){
     motionToPlay = path;
   }else if(path.indexOf("/audio/") >= 0){
@@ -257,10 +257,12 @@ void handleNotFound() {
   message += (server.method() == HTTP_GET) ? "GET" : "POST";
   message += "\nArguments: ";
   message += server.args();
+  message += "\nReiniciando em 5 segundos...";
   message += "\n";
   for (uint8_t i = 0; i < server.args(); i++) {
     message += " NAME:" + server.argName(i) + "\n VALUE:" + server.arg(i) + "\n";
   }
   server.send(404, "text/plain", message);
   DBG_OUTPUT_PORT.print(message);
+  reiniciar_esp();    //vai reiniciar o ESP32
 }
